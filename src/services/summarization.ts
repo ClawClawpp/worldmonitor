@@ -174,7 +174,10 @@ export async function generateSummary(
     return null;
   }
 
-  const cacheKey = buildSummaryCacheKey(headlines, 'brief', geoContext, SITE_VARIANT, lang);
+  const optionsSuffix = options?.skipCloudProviders || options?.skipBrowserFallback
+    ? `:opts${options.skipCloudProviders ? 'C' : ''}${options.skipBrowserFallback ? 'B' : ''}`
+    : '';
+  const cacheKey = buildSummaryCacheKey(headlines, 'brief', geoContext, SITE_VARIANT, lang) + optionsSuffix;
 
   return summaryResultBreaker.execute(
     async () => {

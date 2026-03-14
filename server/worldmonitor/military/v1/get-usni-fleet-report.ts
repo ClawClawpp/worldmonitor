@@ -12,6 +12,8 @@ const USNI_STALE_CACHE_KEY = 'usni-fleet:sebuf:stale:v1';
 
 // ========================================================================
 // RPC handler (Redis-read-only — Railway relay seeds the data)
+// NOTE: forceRefresh is accepted but ignored. The relay is the sole
+// writer; Vercel edge functions must not make upstream fetches.
 // ========================================================================
 
 export async function getUSNIFleetReport(
