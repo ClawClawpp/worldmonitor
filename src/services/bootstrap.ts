@@ -1,4 +1,4 @@
-import { toApiUrl } from '@/services/runtime';
+import { isDesktopRuntime, toApiUrl } from '@/services/runtime';
 
 const hydrationCache = new Map<string, unknown>();
 
