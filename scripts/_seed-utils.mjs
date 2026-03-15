@@ -340,7 +340,7 @@ export async function runSeed(domain, resource, canonicalKey, fetchFn, opts = {}
     if (verified) {
       console.log(`  Verified: data present in Redis`);
     } else {
-      console.warn('  WARNING: verification read returned null');
+      throw new Error(`Verification failed: Redis key ${canonicalKey} empty after successful publish`);
     }
 
     console.log(`\n=== Done (${Math.round(durationMs)}ms) ===`);

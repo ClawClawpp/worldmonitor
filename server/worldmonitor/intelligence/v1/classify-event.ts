@@ -62,6 +62,8 @@ Return: {"level":"...","category":"..."}`;
       cacheKey,
       CLASSIFY_CACHE_TTL,
       async () => {
+        let validatedResult: { level: string; category: string } | null = null;
+
         const result = await callLlm({
           messages: [
             { role: 'system', content: systemPrompt },
@@ -80,25 +82,20 @@ Return: {"level":"...","category":"..."}`;
                 if (!jsonMatch) return false;
                 parsed = JSON.parse(jsonMatch[0]);
               }
-              return !!(VALID_LEVELS.includes(parsed.level ?? '') && VALID_CATEGORIES.includes(parsed.category ?? ''));
+              const level = VALID_LEVELS.includes(parsed.level ?? '') ? parsed.level! : null;
+              const category = VALID_CATEGORIES.includes(parsed.category ?? '') ? parsed.category! : null;
+              if (!level || !category) return false;
+              validatedResult = { level, category };
+              return true;
             } catch {
               return false;
             }
           },
         });
 
-        if (!result) return null;
-
-        let parsed: { level?: string; category?: string };
-        try {
-          parsed = JSON.parse(result.content);
-        } catch {
-          const jsonMatch = result.content.match(/\{[\s\S]*\}/);
-          if (!jsonMatch) return null;
-          parsed = JSON.parse(jsonMatch[0]);
-        }
-
-        return { level: parsed.level!, category: parsed.category!, timestamp: Date.now() };
+        if (!result || !validatedResult) return null;
+        const vr = validatedResult as { level: string; category: string };
+        return { level: vr.level, category: vr.category, timestamp: Date.now() };
       },
     );
   } catch {
