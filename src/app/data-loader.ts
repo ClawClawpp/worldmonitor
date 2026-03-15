@@ -2333,7 +2333,7 @@ export class DataLoaderManager implements AppModule {
         dataFreshness.recordError('wto_trade', 'WTO upstream temporarily unavailable');
       }
       if (rev?.months?.length) {
-        dataFreshness.recordUpdate('treasury_revenue' as DataSourceId, rev.months.length);
+        dataFreshness.recordUpdate('treasury_revenue', rev.months.length);
       }
     } catch (e) {
       console.error('[App] Trade policy failed:', e);

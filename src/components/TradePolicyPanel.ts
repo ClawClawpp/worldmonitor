@@ -93,7 +93,7 @@ export class TradePolicyPanel extends Panel {
           ${t('components.tradePolicy.barriers')}
         </button>` : ''}
         ${hasRevenue ? `<button class="panel-tab ${this.activeTab === 'revenue' ? 'active' : ''}" data-tab="revenue">
-          Revenue
+          ${t('components.tradePolicy.revenue')}
         </button>` : ''}
       </div>
     `;
@@ -113,7 +113,7 @@ export class TradePolicyPanel extends Panel {
       : this.activeTab === 'barriers' ? this.barriersData
       : this.revenueData;
     const unavailableBanner = !activeHasData && activeData?.upstreamUnavailable
-      ? `<div class="economic-warning">${this.activeTab === 'revenue' ? 'Treasury data temporarily unavailable' : t('components.tradePolicy.upstreamUnavailable')}</div>`
+      ? `<div class="economic-warning">${this.activeTab === 'revenue' ? t('components.tradePolicy.treasuryUnavailable') : t('components.tradePolicy.upstreamUnavailable')}</div>`
       : '';
 
     let contentHtml = '';
@@ -254,7 +254,7 @@ export class TradePolicyPanel extends Panel {
 
   private renderRevenue(): string {
     if (!this.revenueData || !this.revenueData.months?.length) {
-      return `<div class="economic-empty">No customs revenue data available</div>`;
+      return `<div class="economic-empty">${t('components.tradePolicy.noRevenueData')}</div>`;
     }
 
     const months = this.revenueData.months;
