@@ -1064,14 +1064,13 @@ async function seedUcdpEvents() {
       }
     }
 
-    // Fallback: if all newest-page fetches failed, use page 0 data (oldest but valid)
-    if (allEvents.length === 0 && failedPages > 0 && Array.isArray(page0?.Result) && page0.Result.length > 0) {
-      console.warn(`[UCDP] All ${failedPages} newest pages failed, falling back to page 0 (${page0.Result.length} events)`);
-      allEvents.push(...page0.Result);
-      for (const e of page0.Result) {
-        const ms = e?.date_start ? Date.parse(String(e.date_start)) : NaN;
-        if (Number.isFinite(ms) && (!Number.isFinite(latestMs) || ms > latestMs)) latestMs = ms;
-      }
+    // If no events from newest pages, extend existing cache TTL instead of overwriting
+    // with stale/empty data. This preserves the last known good payload.
+    if (allEvents.length === 0 && failedPages > 0) {
+      console.warn(`[UCDP] All ${failedPages} newest pages failed, extending existing key TTL (preserving last good data)`);
+      try { await upstashExpire(UCDP_REDIS_KEY, UCDP_TTL_SECONDS); } catch {}
+      // Do NOT update seed-meta: health should reflect actual data freshness, not this failed attempt
+      return;
     }
 
     const filtered = allEvents.filter((e) => {
@@ -1095,11 +1094,10 @@ async function seedUcdpEvents() {
       sourceOriginal: (e.source_original || '').substring(0, 300),
     })).sort((a, b) => b.dateStart - a.dateStart).slice(0, UCDP_MAX_EVENTS);
 
-    // If we still have 0 events after fallback, extend existing key TTL instead of overwriting with empty
+    // Partial success but 0 events after filtering: extend TTL, don't overwrite
     if (mapped.length === 0) {
-      console.warn(`[UCDP] 0 events after processing (failed pages: ${failedPages}), extending existing key TTL`);
+      console.warn(`[UCDP] 0 events after filtering (failed pages: ${failedPages}), extending existing key TTL`);
       try { await upstashExpire(UCDP_REDIS_KEY, UCDP_TTL_SECONDS); } catch {}
-      await upstashSet('seed-meta:conflict:ucdp-events', { fetchedAt: Date.now(), recordCount: 0, extended: true }, 604800);
       return;
     }
 
