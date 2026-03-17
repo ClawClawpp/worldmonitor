@@ -52,7 +52,7 @@ const SEED_DOMAINS = {
   'intelligence:advisories':  { key: 'seed-meta:intelligence:advisories',  intervalMin: 45 },
   'trade:customs-revenue':    { key: 'seed-meta:trade:customs-revenue',    intervalMin: 720 },
   'thermal:escalation':       { key: 'seed-meta:thermal:escalation',       intervalMin: 180 },
-  'radiation:observations':   { key: 'seed-meta:radiation:observations',   intervalMin: 60 },
+  'radiation:observations':   { key: 'seed-meta:radiation:observations',   intervalMin: 15 },
   'sanctions:pressure':       { key: 'seed-meta:sanctions:pressure',       intervalMin: 360 },
 };
 
