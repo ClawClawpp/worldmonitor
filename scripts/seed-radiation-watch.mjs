@@ -466,6 +466,7 @@ runSeed('radiation', 'observations', CANONICAL_KEY, fetchRadiationWatch, {
   validateFn: validate,
   ttlSeconds: CACHE_TTL,
   sourceVersion: 'epa-radnet-safecast-merge-v1',
+  recordCount: (data) => data?.observations?.length ?? 0,
 }).catch((err) => {
   console.error('FATAL:', err.message || err);
   process.exit(1);

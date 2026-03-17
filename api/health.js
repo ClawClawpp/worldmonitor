@@ -35,6 +35,7 @@ const BOOTSTRAP_KEYS = {
   forecasts:         'forecast:predictions:v2',
   securityAdvisories: 'intelligence:advisories-bootstrap:v1',
   customsRevenue:    'trade:customs-revenue:v1',
+  radiationWatch:    'radiation:observations:v1',
 };
 
 const STANDALONE_KEYS = {
@@ -70,7 +71,6 @@ const STANDALONE_KEYS = {
   corridorrisk:          'supply_chain:corridorrisk:v1',
   chokepointTransits:    'supply_chain:chokepoint_transits:v1',
   transitSummaries:      'supply_chain:transit-summaries:v1',
-  radiation:             'radiation:observations:v1',
 };
 
 const SEED_META = {
@@ -130,6 +130,7 @@ const SEED_META = {
   usniFleet:           { key: 'seed-meta:military:usni-fleet',               maxStaleMin: 420 },
   securityAdvisories:  { key: 'seed-meta:intelligence:advisories',           maxStaleMin: 90 },
   customsRevenue:      { key: 'seed-meta:trade:customs-revenue',              maxStaleMin: 1440 },
+  radiationWatch:      { key: 'seed-meta:radiation:observations',             maxStaleMin: 30 },
 };
 
 // Standalone keys that are populated on-demand by RPC handlers (not seeds).
@@ -142,7 +143,6 @@ const ON_DEMAND_KEYS = new Set([
   'cyberThreatsRpc', 'militaryBases', 'temporalAnomalies', 'displacement',
   'corridorrisk', // intermediate key; data flows through transit-summaries:v1
   'riskScores', 'serviceStatuses', // RPC-populated; no seed-meta after PR #1649 removed it from cachedFetchJson
-  'radiation', // RPC-populated via cachedFetchJson; no dedicated seed
 ]);
 
 // Keys where 0 records is a valid healthy state (e.g. no airports closed).
