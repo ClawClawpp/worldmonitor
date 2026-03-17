@@ -7558,6 +7558,7 @@ async function handleWidgetAgentRequest(req, res) {
 
     messages.push({ role: 'user', content: String(prompt).slice(0, 2000) });
 
+    let completed = false;
     for (let turn = 0; turn < 6; turn++) {
       if (cancelled) break;
 
@@ -7578,6 +7579,7 @@ async function handleWidgetAgentRequest(req, res) {
         const title = titleMatch?.[1]?.trim() ?? 'Custom Widget';
         sendWidgetSSE(res, 'html_complete', { html });
         sendWidgetSSE(res, 'done', { title });
+        completed = true;
         break;
       }
 
@@ -7611,6 +7613,9 @@ async function handleWidgetAgentRequest(req, res) {
         messages.push({ role: 'assistant', content: response.content });
         messages.push({ role: 'user', content: toolResults });
       }
+    }
+    if (!completed && !cancelled) {
+      sendWidgetSSE(res, 'error', { message: 'Widget generation incomplete: tool loop exhausted (6 turns)' });
     }
   } catch (err) {
     if (!cancelled) sendWidgetSSE(res, 'error', { message: 'Agent error' });
