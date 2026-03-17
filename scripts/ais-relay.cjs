@@ -3025,6 +3025,20 @@ async function fetchTheaterFlightsFromWingbits() {
   }
 }
 
+function countMilitaryVesselsInBounds(bounds) {
+  let count = 0;
+  const cutoff = Date.now() - 6 * 60 * 60 * 1000; // only vessels seen in last 6h
+  for (const v of vessels.values()) {
+    if (v.timestamp < cutoff) continue;
+    if (v.lat >= bounds.south && v.lat <= bounds.north && v.lon >= bounds.west && v.lon <= bounds.east) {
+      if (isLikelyMilitaryCandidate({ MMSI: v.mmsi, ShipType: v.shipType, ShipName: v.name })) {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
 function calculateTheaterPostures(flights) {
   return POSTURE_THEATERS.map((theater) => {
     const tf = flights.filter(
@@ -3035,17 +3049,20 @@ function calculateTheaterPostures(flights) {
     const tankers = tf.filter((f) => f.aircraftType === 'tanker').length;
     const awacs = tf.filter((f) => f.aircraftType === 'awacs').length;
     const fighters = tf.filter((f) => f.aircraftType === 'fighter').length;
-    const postureLevel = total >= theater.thresholds.critical ? 'critical'
-      : total >= theater.thresholds.elevated ? 'elevated' : 'normal';
+    const vesselCount = countMilitaryVesselsInBounds(theater.bounds);
+    const combinedActivity = total + vesselCount;
+    const postureLevel = combinedActivity >= theater.thresholds.critical ? 'critical'
+      : combinedActivity >= theater.thresholds.elevated ? 'elevated' : 'normal';
     const strikeCapable = tankers >= theater.strikeIndicators.minTankers &&
       awacs >= theater.strikeIndicators.minAwacs && fighters >= theater.strikeIndicators.minFighters;
     const ops = [];
     if (strikeCapable) ops.push('strike_capable');
     if (tankers > 0) ops.push('aerial_refueling');
     if (awacs > 0) ops.push('airborne_early_warning');
+    if (vesselCount > 0) ops.push('naval_presence');
     return {
       theater: theater.id, postureLevel, activeFlights: total,
-      trackedVessels: 0, activeOperations: ops, assessedAt: Date.now(),
+      trackedVessels: vesselCount, activeOperations: ops, assessedAt: Date.now(),
     };
   });
 }
