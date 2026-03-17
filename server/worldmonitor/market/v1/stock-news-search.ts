@@ -176,7 +176,7 @@ async function searchWithExa(query: string, maxResults: number, days: number, ap
     body: JSON.stringify({
       query,
       numResults: Math.min(maxResults, 10),
-      type: 'news',
+      type: 'neural',
       useAutoprompt: false,
       startPublishedDate: startDate,
     }),
