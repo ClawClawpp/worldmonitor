@@ -38,9 +38,26 @@ function isRetryableApiStatus(status) {
   return status === 408 || status === 409 || status === 429 || status >= 500;
 }
 
+const RETRYABLE_CAUSE_CODES = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EPIPE',
+  'UND_ERR_SOCKET',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_BODY_TIMEOUT',
+]);
+
 function isRetryableR2Error(err) {
   const status = err?.status;
   if (typeof status === 'number') return isRetryableApiStatus(status);
+
+  // Node built-in fetch wraps socket errors as TypeError('fetch failed') with
+  // the real reason on err.cause.code — check that before scanning the message
+  // string, since err.message itself is just the generic 'fetch failed' text.
+  const causeCode = err?.cause?.code;
+  if (causeCode && RETRYABLE_CAUSE_CODES.has(causeCode)) return true;
 
   const message = summarizeError(err).toLowerCase();
   if (
