@@ -109,7 +109,7 @@ async function fetchAndParseRss(
   const cacheKey = `rss:feed:v1:${feed.url}`;
 
   try {
-    const cached = await cachedFetchJson<ParsedItem[]>(cacheKey, 600, async () => {
+    const cached = await cachedFetchJson<ParsedItem[]>(cacheKey, 3600, async () => {
       // Try direct fetch first
       let text = await fetchRssText(feed.url, signal).catch(() => null);
 
@@ -281,7 +281,7 @@ export async function listFeedDigest(
 
   const fallbackKey = `${variant}:${lang}`;
   try {
-    const cached = await cachedFetchJson<ListFeedDigestResponse>(digestCacheKey, 900, async () => {
+    const cached = await cachedFetchJson<ListFeedDigestResponse>(digestCacheKey, 3600, async () => {
       return buildDigest(variant, lang);
     });
     if (cached) {
@@ -328,7 +328,7 @@ async function buildDigest(variant: string, lang: string): Promise<ListFeedDiges
       const settled = await Promise.allSettled(
         batch.map(async ({ category, feed }) => {
           const items = await fetchAndParseRss(feed, variant, deadlineController.signal);
-          feedStatuses[feed.name] = items.length > 0 ? 'ok' : 'empty';
+          if (items.length === 0) feedStatuses[feed.name] = 'empty';
           return { category, items };
         }),
       );
