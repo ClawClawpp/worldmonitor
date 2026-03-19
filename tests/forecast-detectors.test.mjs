@@ -1275,6 +1275,19 @@ describe('validateCaseNarratives', () => {
     }], [pred]);
     assert.equal(valid.length, 1);
   });
+
+  it('accepts snake_case case narrative aliases', () => {
+    const pred = makePrediction('conflict', 'Iran', 'Escalation risk: Iran', 0.7, 0.6, '7d', [
+      { type: 'cii', value: 'Iran CII 87', weight: 0.4 },
+    ]);
+    const valid = validateCaseNarratives([{
+      idx: 0,
+      base_case: 'Iran CII 87 remains the main anchor for the base path in the next 7d.',
+      escalatory_case: 'A further rise in Iran CII 87 and added conflict-event reporting would move risk materially higher.',
+      contrarian_case: 'If no new corroborating headlines appear, the current path would lose support and flatten out.',
+    }], [pred]);
+    assert.equal(valid.length, 1);
+  });
 });
 
 describe('computeConfidence', () => {
@@ -1449,6 +1462,13 @@ describe('validateScenarios', () => {
     assert.deepEqual(validateScenarios(null, preds), []);
     assert.deepEqual(validateScenarios('not array', preds), []);
   });
+
+  it('accepts scenario items that use alias fields', () => {
+    const scenarios = [{ idx: 0, summary: 'Iran remains the center of this risk path, with the title and region both still pointing to sustained instability pressure over the next 7d.' }];
+    const valid = validateScenarios(scenarios, preds);
+    assert.equal(valid.length, 1);
+    assert.equal(valid[0].index, 0);
+  });
 });
 
 // ── Phase 3 Tests ──────────────────────────────────────────
@@ -1535,6 +1555,16 @@ describe('validatePerspectives', () => {
       contrarian: 'Valid contrarian perspective with sufficient length too.',
     }];
     assert.equal(validatePerspectives(items, preds).length, 0);
+  });
+
+  it('accepts snake_case perspective aliases', () => {
+    const items = [{
+      idx: 0,
+      strategic_perspective: 'The CII data shows critical instability with a score of 87 in the conflict region.',
+      regional_perspective: 'Regional actors face mounting pressure from the elevated CII threat level in Iran.',
+      contrarian_perspective: 'Despite the elevated signal set, diplomatic channels remain open and could still slow escalation.',
+    }];
+    assert.equal(validatePerspectives(items, preds).length, 1);
   });
 });
 

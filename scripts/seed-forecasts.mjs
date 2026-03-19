@@ -40,6 +40,11 @@ const MIN_TARGET_PUBLISHED_FORECASTS = 10;
 const MAX_TARGET_PUBLISHED_FORECASTS = 14;
 const MAX_PRESELECTED_FORECASTS_PER_FAMILY = 3;
 const MAX_PRESELECTED_FORECASTS_PER_SITUATION = 2;
+const FAMILY_TOKEN_STOPWORDS = new Set([
+  'situation', 'family', 'pressure', 'conflict', 'political', 'market', 'supply', 'chain',
+  'infrastructure', 'cyber', 'security', 'service', 'disruption', 'risk', 'pricing', 'repricing',
+  'regional', 'global', 'active', 'pressure', 'effects',
+]);
 const CYBER_MIN_THREATS_PER_COUNTRY = 5;
 const CYBER_MAX_FORECASTS = 12;
 const CYBER_SCORE_TYPE_MULTIPLIER = 1.5;    // bonus per distinct threat type
@@ -2484,7 +2489,12 @@ function buildSituationClusters(predictions) {
 }
 
 function formatSituationFamilyLabel(family) {
-  const leadRegion = family.dominantRegion || family.regions?.[0] || 'Cross-regional';
+  const regionCounts = Object.entries(family._regionCounts || {}).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const topRegionCount = regionCounts[0]?.[1] || 0;
+  const secondRegionCount = regionCounts[1]?.[1] || 0;
+  const leadRegion = family.regions?.length > 1 && topRegionCount <= (secondRegionCount + 1)
+    ? 'Cross-regional'
+    : (family.dominantRegion || family.regions?.[0] || 'Cross-regional');
   const topDomains = pickDominantSituationValues(family._domainCounts, family.domains, 2);
   const domainLabel = formatSituationDomainLabel(topDomains.length ? topDomains : family.domains);
   return `${leadRegion} ${domainLabel} pressure family`;
@@ -2500,7 +2510,7 @@ function buildSituationFamilyCandidate(cluster) {
       ...normalizeSituationText(cluster.label),
       ...((cluster.sampleTitles || []).flatMap((title) => normalizeSituationText(title))),
     ])
-      .filter((token) => !['situation', 'family', 'pressure'].includes(token))
+      .filter((token) => token.length > 3 && !FAMILY_TOKEN_STOPWORDS.has(token))
       .slice(0, 28),
     signalTypes: uniqueSortedStrings((cluster.topSignals || []).map((signal) => signal.type).filter(Boolean)),
   };
@@ -2517,7 +2527,7 @@ function computeSituationFamilyOverlap(candidate, family) {
 }
 
 function shouldMergeSituationFamilyCandidate(candidate, family, score) {
-  if (score < 3) return false;
+  if (score < 4) return false;
 
   const regionOverlap = intersectCount(candidate.regions, family.regions);
   const actorOverlap = intersectCount(candidate.actors, family.actors);
@@ -2525,9 +2535,10 @@ function shouldMergeSituationFamilyCandidate(candidate, family, score) {
   const signalOverlap = intersectCount(candidate.signalTypes, family.signalTypes);
   const tokenOverlap = intersectCount(candidate.tokens, family.tokens);
 
-  if (regionOverlap > 0 && (domainOverlap > 0 || signalOverlap > 0 || tokenOverlap >= 2)) return true;
-  if (actorOverlap > 0 && (domainOverlap > 0 || tokenOverlap >= 2)) return true;
-  if (domainOverlap > 0 && signalOverlap > 0 && tokenOverlap >= 3) return true;
+  if (regionOverlap > 0 && (domainOverlap > 0 || signalOverlap > 0 || tokenOverlap >= 1)) return true;
+  if (regionOverlap > 0 && actorOverlap > 0) return true;
+  if (regionOverlap > 0 && tokenOverlap >= 2) return true;
+  if (domainOverlap > 0 && signalOverlap > 0 && tokenOverlap >= 4) return true;
   return false;
 }
 
@@ -5092,7 +5103,7 @@ Output JSON array:
 
 function validatePerspectives(items, predictions) {
   if (!Array.isArray(items)) return [];
-  return items.filter(item => {
+  return items.map((item) => normalizeNarrativeItem(item)).filter(item => {
     if (typeof item.index !== 'number' || item.index < 0 || item.index >= predictions.length) return false;
     for (const key of ['strategic', 'regional', 'contrarian']) {
       if (typeof item[key] !== 'string') return false;
@@ -5105,7 +5116,7 @@ function validatePerspectives(items, predictions) {
 
 function validateCaseNarratives(items, predictions) {
   if (!Array.isArray(items)) return [];
-  return items.filter(item => {
+  return items.map((item) => normalizeNarrativeItem(item)).filter(item => {
     if (typeof item.index !== 'number' || item.index < 0 || item.index >= predictions.length) return false;
     for (const key of ['baseCase', 'escalatoryCase', 'contrarianCase']) {
       if (typeof item[key] !== 'string') return false;
@@ -5128,16 +5139,36 @@ function parseLLMScenarios(text) {
   // Try complete JSON array first
   const match = cleaned.match(/\[[\s\S]*\]/);
   if (match) {
-    try { return JSON.parse(match[0]); } catch { /* fall through to repair */ }
+    try { return normalizeNarrativeItems(JSON.parse(match[0])); } catch { /* fall through to repair */ }
   }
   // Try truncated: find opening bracket and attempt repair
   const bracketIdx = cleaned.indexOf('[');
   if (bracketIdx === -1) return null;
   const partial = cleaned.slice(bracketIdx);
   for (const suffix of ['"}]', '}]', '"]', ']']) {
-    try { return JSON.parse(partial + suffix); } catch { /* next */ }
+    try { return normalizeNarrativeItems(JSON.parse(partial + suffix)); } catch { /* next */ }
   }
   return null;
+}
+
+function normalizeNarrativeItem(item) {
+  if (!item || typeof item !== 'object') return item;
+  const normalized = { ...item };
+  if (normalized.index == null && Number.isFinite(Number(normalized.i))) normalized.index = Number(normalized.i);
+  if (normalized.index == null && Number.isFinite(Number(normalized.idx))) normalized.index = Number(normalized.idx);
+  normalized.scenario = normalized.scenario || normalized.summary || normalized.baseScenario || normalized.base_scenario || '';
+  normalized.baseCase = normalized.baseCase || normalized.base_case || normalized.base || normalized.baseSummary || '';
+  normalized.escalatoryCase = normalized.escalatoryCase || normalized.escalatory_case || normalized.upsideCase || normalized.upside_case || '';
+  normalized.contrarianCase = normalized.contrarianCase || normalized.contrarian_case || normalized.downsideCase || normalized.downside_case || '';
+  normalized.strategic = normalized.strategic || normalized.strategicPerspective || normalized.strategic_perspective || '';
+  normalized.regional = normalized.regional || normalized.regionalPerspective || normalized.regional_perspective || '';
+  normalized.contrarian = normalized.contrarian || normalized.contrarianPerspective || normalized.contrarian_perspective || normalized.counter || '';
+  return normalized;
+}
+
+function normalizeNarrativeItems(items) {
+  if (!Array.isArray(items)) return items;
+  return items.map((item) => normalizeNarrativeItem(item));
 }
 
 function hasEvidenceReference(text, candidate) {
@@ -5149,7 +5180,7 @@ function hasEvidenceReference(text, candidate) {
 
 function validateScenarios(scenarios, predictions) {
   if (!Array.isArray(scenarios)) return [];
-  return scenarios.filter(s => {
+  return scenarios.map((item) => normalizeNarrativeItem(item)).filter(s => {
     if (!s || typeof s.scenario !== 'string' || s.scenario.length < 30) return false;
     if (typeof s.index !== 'number' || s.index < 0 || s.index >= predictions.length) return false;
     const pred = predictions[s.index];
@@ -5162,6 +5193,8 @@ function validateScenarios(scenarios, predictions) {
       ...(pred.caseFile?.supportingEvidence || []).map(item => item.summary || ''),
       ...(pred.caseFile?.counterEvidence || []).map(item => item.summary || ''),
       ...(pred.caseFile?.triggers || []),
+      pred.region || '',
+      pred.title || '',
     ];
     const hasEvidenceRef = evidenceCandidates.some(candidate => hasEvidenceReference(scenarioLower, candidate));
     if (!hasEvidenceRef) {

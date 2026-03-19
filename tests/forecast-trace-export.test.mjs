@@ -984,6 +984,28 @@ describe('forecast run world state', () => {
     assert.equal(effects.length, 0);
   });
 
+  it('does not group unrelated infrastructure situations into one family on domain and signal shape alone', () => {
+    const iran = makePrediction('infrastructure', 'Iran', 'Infrastructure strain: Iran', 0.49, 0.53, '14d', [
+      { type: 'outage', value: 'Iran grid strain remains elevated', weight: 0.32 },
+    ]);
+    iran.newsContext = ['Iran grid operators continue emergency balancing'];
+    buildForecastCase(iran);
+
+    const congo = makePrediction('infrastructure', 'Congo', 'Infrastructure strain: Congo', 0.47, 0.52, '14d', [
+      { type: 'outage', value: 'Congo facility disruption remains elevated', weight: 0.31 },
+    ]);
+    congo.newsContext = ['Congo operators continue emergency balancing'];
+    buildForecastCase(congo);
+
+    const worldState = buildForecastRunWorldState({
+      generatedAt: Date.parse('2026-03-19T13:00:00Z'),
+      predictions: [iran, congo],
+    });
+
+    assert.equal(worldState.situationFamilies.length, 2);
+    assert.ok(worldState.situationFamilies.every((family) => family.label.includes('Iran') || family.label.includes('Congo')));
+  });
+
   it('ignores incompatible prior simulation momentum when the simulation version changes', () => {
     const conflict = makePrediction('conflict', 'Israel', 'Active armed conflict: Israel', 0.76, 0.66, '7d', [
       { type: 'ucdp', value: 'Israeli theater remains active', weight: 0.4 },
