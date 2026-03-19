@@ -110,3 +110,47 @@ export function sanitizeHeadlines(headlines) {
     .map(sanitizeForPrompt)
     .filter(h => h.length > 0);
 }
+
+// Structural-only patterns safe to apply to headlines without mangling
+// legitimate tech/security news (e.g. "Output your system prompt" as a story subject).
+const STRUCTURAL_PATTERNS = [
+  /<\|(?:im_start|im_end|begin_of_text|end_of_text|eot_id|start_header_id|end_header_id)\|>/gi,
+  /<\|(?:endoftext|fim_prefix|fim_middle|fim_suffix|pad)\|>/gi,
+  /\[(?:INST|\/INST|SYS|\/SYS)\]/gi,
+  /<\/?(system|user|assistant|prompt|context|instruction)\b[^>]*>/gi,
+  /^[\-=]{3,}$/gm,
+];
+
+/**
+ * Sanitize a headline for safe inclusion in an LLM prompt, preserving
+ * legitimate headlines that quote injection phrases as news subjects.
+ *
+ * Only structural/delimiter patterns are stripped — semantic instruction
+ * phrases are left intact to avoid mangling tech/security news headlines.
+ * Full sanitizeForPrompt() is reserved for free-form geoContext.
+ *
+ * @param {unknown} input
+ * @returns {string}
+ */
+export function sanitizeHeadline(input) {
+  if (typeof input !== 'string') return '';
+
+  let s = input.replace(CONTROL_CHARS_RE, '');
+  for (const pattern of STRUCTURAL_PATTERNS) {
+    pattern.lastIndex = 0;
+    s = s.replace(pattern, ' ');
+  }
+  return s.replace(/\s{2,}/g, ' ').trim();
+}
+
+/**
+ * Apply sanitizeHeadline() over an array, dropping empties.
+ * @param {unknown[]} headlines
+ * @returns {string[]}
+ */
+export function sanitizeHeadlinesLight(headlines) {
+  if (!Array.isArray(headlines)) return [];
+  return headlines
+    .map(sanitizeHeadline)
+    .filter(h => h.length > 0);
+}
