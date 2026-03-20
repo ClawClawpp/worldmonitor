@@ -953,6 +953,8 @@ components:
                     type: string
                 mostExpensiveCountry:
                     type: string
+                upstreamUnavailable:
+                    type: boolean
         CountryBasket:
             type: object
             properties:
