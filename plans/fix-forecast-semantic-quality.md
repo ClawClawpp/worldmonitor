@@ -88,8 +88,7 @@ const sharedChannels = ...
 - `"External power broker:external"` → 0.85 → ALLOWED at this stage, handled by Change B
 
 NOTE: "Civil protection authorities:state" scores 0.73 because:
-base(0.55) + nonShared(+0.10) + nonGenericCategory(+0.15, 'state' not in GENERIC_ACTOR_CATEGORIES)
-+ 3-word name(+0.05) - genericMarker('authorities', -0.12) = 0.73.
+`base(0.55) + nonShared(+0.10) + nonGenericCategory(+0.15) + 3-word name(+0.05) - genericMarker('authorities', -0.12) = 0.73`
 
 The threshold of 0.72 blocks it by 0.01. This is intentional but fragile. If concerned, raise to
 0.75 to give a clear margin. Test with both values.
