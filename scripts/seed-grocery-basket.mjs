@@ -48,7 +48,7 @@ async function fetchFxRates() {
   return rates;
 }
 
-async function searchExa(query, domains) {
+async function searchExa(query) {
   // Support both EXA_API_KEYS (comma-separated, shared with ais-relay) and EXA_API_KEY
   const apiKey = (process.env.EXA_API_KEYS || process.env.EXA_API_KEY || '').split(/[\n,]+/)[0].trim();
   if (!apiKey) throw new Error('EXA_API_KEYS or EXA_API_KEY not set');
@@ -62,12 +62,13 @@ async function searchExa(query, domains) {
     },
     body: JSON.stringify({
       query,
-      includeDomains: domains,
-      numResults: 3,
+      // No includeDomains — EXA neural search finds better sources (price comparison
+      // sites, retailer pages, market reports) than hardcoded domain lists
+      numResults: 5,
       type: 'auto',
       contents: {
         summary: {
-          query: 'What is the price of this product? Include currency symbol and amount.',
+          query: 'What is the retail price of this product? Include currency symbol and amount.',
         },
       },
     }),
@@ -139,8 +140,8 @@ async function fetchGroceryBasketPrices() {
       let sourceSite = '';
 
       try {
-        const query = `${item.query} ${country.name}`;
-        const exaResult = await searchExa(query, country.sites);
+        const query = `${item.query} ${country.name} supermarket retail price`;
+        const exaResult = await searchExa(query);
 
         if (exaResult?.results?.length) {
           for (const result of exaResult.results) {

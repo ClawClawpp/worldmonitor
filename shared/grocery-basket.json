@@ -12,15 +12,15 @@
     { "id": "bread", "name": "Bread", "query": "white bread loaf price", "unit": "loaf" }
   ],
   "countries": [
-    { "code": "AE", "name": "UAE", "currency": "AED", "flag": "🇦🇪", "sites": ["carrefouruae.com", "gcc.luluhypermarket.com", "noon.com", "amazon.ae"] },
-    { "code": "SA", "name": "Saudi Arabia", "currency": "SAR", "flag": "🇸🇦", "sites": ["carrefoursaudi.com", "gcc.luluhypermarket.com", "noon.com"] },
-    { "code": "QA", "name": "Qatar", "currency": "QAR", "flag": "🇶🇦", "sites": ["carrefour.qa", "gcc.luluhypermarket.com"] },
-    { "code": "KW", "name": "Kuwait", "currency": "KWD", "flag": "🇰🇼", "sites": ["gcc.luluhypermarket.com"] },
-    { "code": "BH", "name": "Bahrain", "currency": "BHD", "flag": "🇧🇭", "sites": ["gcc.luluhypermarket.com"] },
-    { "code": "OM", "name": "Oman", "currency": "OMR", "flag": "🇴🇲", "sites": ["gcc.luluhypermarket.com"] },
-    { "code": "EG", "name": "Egypt", "currency": "EGP", "flag": "🇪🇬", "sites": ["carrefouregypt.com", "gcc.luluhypermarket.com", "noon.com"] },
-    { "code": "JO", "name": "Jordan", "currency": "JOD", "flag": "🇯🇴", "sites": ["carrefour.jo", "ounasdelivery.com"] },
-    { "code": "LB", "name": "Lebanon", "currency": "LBP", "flag": "🇱🇧", "sites": ["carrefourlebanon.com"] }
+    { "code": "AE", "name": "UAE", "currency": "AED", "flag": "🇦🇪" },
+    { "code": "SA", "name": "Saudi Arabia", "currency": "SAR", "flag": "🇸🇦" },
+    { "code": "QA", "name": "Qatar", "currency": "QAR", "flag": "🇶🇦" },
+    { "code": "KW", "name": "Kuwait", "currency": "KWD", "flag": "🇰🇼" },
+    { "code": "BH", "name": "Bahrain", "currency": "BHD", "flag": "🇧🇭" },
+    { "code": "OM", "name": "Oman", "currency": "OMR", "flag": "🇴🇲" },
+    { "code": "EG", "name": "Egypt", "currency": "EGP", "flag": "🇪🇬" },
+    { "code": "JO", "name": "Jordan", "currency": "JOD", "flag": "🇯🇴" },
+    { "code": "LB", "name": "Lebanon", "currency": "LBP", "flag": "🇱🇧" }
   ],
   "fxSymbols": {
     "AED": "AEDUSD=X",
