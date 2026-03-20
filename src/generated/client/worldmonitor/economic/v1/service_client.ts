@@ -229,6 +229,7 @@ export interface ListGroceryBasketPricesResponse {
   fetchedAt: string;
   cheapestCountry: string;
   mostExpensiveCountry: string;
+  upstreamUnavailable: boolean;
 }
 
 export interface CountryBasket {

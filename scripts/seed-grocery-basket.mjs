@@ -155,19 +155,31 @@ const CURRENCY_MIN = { NGN: 50, IDR: 500, ARS: 50, KRW: 1000, ZAR: 2, PKR: 20, L
 // Applied only to USD-denominated countries; other currencies vary too widely in purchasing power
 const ITEM_USD_MAX = { sugar: 8, salt: 5, rice: 6, pasta: 4, potatoes: 6, oil: 15, flour: 8, eggs: 12, milk: 8, bread: 8 };
 
+// Pattern order matters: try currency-FIRST (e.g. "GBP 1.50") before number-first
+// to avoid matching pack sizes / weights that precede a currency token (e.g. "12 SAR" in "eggs 12 SAR 8.99")
 const PRICE_PATTERNS = [
-  new RegExp(`(\\d+(?:\\.\\d{1,3})?)\\s*(${CCY})`, 'i'),
-  new RegExp(`(${CCY})\\s*(\\d+(?:\\.\\d{1,3})?)`, 'i'),
+  new RegExp(`(${CCY})\\s*(\\d+(?:\\.\\d{1,3})?)`, 'i'),  // CCY then number (preferred)
+  new RegExp(`(\\d+(?:\\.\\d{1,3})?)\\s*(${CCY})`, 'i'),  // number then CCY (fallback — use last match)
 ];
 
 function matchPrice(text, url) {
-  // Try ISO code patterns first
-  for (const re of PRICE_PATTERNS) {
-    const match = text.match(re);
-    if (match) {
-      const [price, currency] = /^\d/.test(match[1])
-        ? [parseFloat(match[1]), match[2].toUpperCase()]
-        : [parseFloat(match[2]), match[1].toUpperCase()];
+  // Pattern 0: currency-first — take the first match (safe, no ambiguity)
+  const re0 = PRICE_PATTERNS[0];
+  const m0 = text.match(re0);
+  if (m0) {
+    const price = parseFloat(m0[2]);
+    const currency = m0[1].toUpperCase();
+    const minPrice = CURRENCY_MIN[currency] ?? 0;
+    if (price > minPrice && price < 100000) return { price, currency, source: url || '' };
+  }
+  // Pattern 1: number-first — collect ALL matches and take the LAST one to avoid
+  // matching pack counts / weights (e.g. "12" in "eggs 12 pack SAR 8.99")
+  const re1 = PRICE_PATTERNS[1];
+  const allMatches = [...text.matchAll(new RegExp(re1.source, 'gi'))];
+  if (allMatches.length) {
+    for (const match of allMatches.reverse()) {
+      const price = parseFloat(match[1]);
+      const currency = match[2].toUpperCase();
       const minPrice = CURRENCY_MIN[currency] ?? 0;
       if (price > minPrice && price < 100000) return { price, currency, source: url || '' };
     }
@@ -294,9 +306,15 @@ async function fetchGroceryBasketPrices() {
     });
   }
 
-  const withData = countriesResult.filter(c => c.totalUsd > 0);
-  const cheapest = withData.length ? withData.reduce((a, b) => a.totalUsd < b.totalUsd ? a : b).code : '';
-  const mostExpensive = withData.length ? withData.reduce((a, b) => a.totalUsd > b.totalUsd ? a : b).code : '';
+  // Only rank countries with enough items found — a country with 4/10 items
+  // could appear "cheapest" purely due to missing data, not actual prices.
+  const MIN_ITEMS_FOR_RANKING = Math.ceil(config.items.length * 0.7); // ≥ 70% coverage
+  const rankable = countriesResult.filter(c => {
+    const found = c.items.filter(ip => ip.available).length;
+    return c.totalUsd > 0 && found >= MIN_ITEMS_FOR_RANKING;
+  });
+  const cheapest = rankable.length ? rankable.reduce((a, b) => a.totalUsd < b.totalUsd ? a : b).code : '';
+  const mostExpensive = rankable.length ? rankable.reduce((a, b) => a.totalUsd > b.totalUsd ? a : b).code : '';
 
   return {
     countries: countriesResult,
