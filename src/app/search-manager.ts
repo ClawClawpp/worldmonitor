@@ -25,6 +25,8 @@ import { trackSearchResultSelected, trackCountrySelected } from '@/services/anal
 import { t } from '@/services/i18n';
 import { saveToStorage, setTheme } from '@/utils';
 import { CountryIntelManager } from '@/app/country-intel';
+import type { PositionSample } from '@/services/aviation';
+import type { MilitaryFlight } from '@/types';
 
 export interface SearchManagerCallbacks {
   openCountryBriefByCode: (code: string, country: string) => void;
@@ -381,6 +383,13 @@ export class SearchManager implements AppModule {
         this.callbacks.openCountryBriefByCode(code, name);
         break;
       }
+      case 'flight': {
+        const { lat, lon, layer } = result.data as { kind: string; lat: number; lon: number; layer: keyof MapLayers };
+        this.ctx.map?.enableLayer(layer);
+        this.ctx.mapLayers[layer] = true;
+        setTimeout(() => { this.ctx.map?.setCenter(lat, lon, 9); }, 300);
+        break;
+      }
     }
   }
 
@@ -521,6 +530,29 @@ export class SearchManager implements AppModule {
       el.classList.remove('search-highlight');
       this.highlightTimers.delete(el);
     }, 3100));
+  }
+
+  updateFlightSource(adsb: PositionSample[], military: MilitaryFlight[]): void {
+    if (!this.ctx.searchModal) return;
+    const items = [
+      ...adsb.map(p => ({
+        id: p.icao24,
+        title: (p.callsign || p.icao24).trim().toUpperCase(),
+        subtitle: p.onGround
+          ? 'On ground'
+          : `FL${Math.round(p.altitudeFt / 100)} · ${Math.round(p.groundSpeedKts)} kts`,
+        data: { kind: 'adsb' as const, lat: p.lat, lon: p.lon, layer: 'flights' as const },
+      })),
+      ...military.map(f => ({
+        id: f.hexCode,
+        title: f.callsign.trim().toUpperCase(),
+        subtitle: f.onGround
+          ? `Military · ${f.aircraftType} · on ground`
+          : `Military · ${f.aircraftType} · FL${Math.round(f.altitude / 100)}`,
+        data: { kind: 'military' as const, lat: f.lat, lon: f.lon, layer: 'military' as const },
+      })),
+    ];
+    this.ctx.searchModal.registerSource('flight', items);
   }
 
   updateSearchIndex(): void {

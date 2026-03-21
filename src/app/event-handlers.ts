@@ -62,6 +62,7 @@ import { TvModeController } from '@/services/tv-mode';
 
 export interface EventHandlerCallbacks {
   updateSearchIndex: () => void;
+  updateFlightSource?: (adsb: import('@/services/aviation').PositionSample[], military: import('@/types').MilitaryFlight[]) => void;
   loadAllData: () => Promise<void>;
   flushStaleRefreshes: () => void;
   setHiddenSince: (ts: number) => void;
@@ -1100,11 +1101,13 @@ export class EventHandlerManager implements AppModule {
       }
     });
 
-    // Forward live aircraft positions from map to AirlineIntelPanel + cache
+    // Forward live aircraft positions from map to AirlineIntelPanel + cache + search index
     this.ctx.map?.setOnAircraftPositionsUpdate((positions) => {
       this.ctx.intelligenceCache.aircraftPositions = positions;
       const airlineIntel = this.ctx.panels['airline-intel'] as AirlineIntelPanel | undefined;
       airlineIntel?.updateLivePositions(positions);
+      const military = this.ctx.intelligenceCache.military?.flights ?? [];
+      this.callbacks.updateFlightSource?.(positions, military);
     });
   }
 
