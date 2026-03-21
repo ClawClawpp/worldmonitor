@@ -369,7 +369,8 @@ export interface NotamClosureResult {
   notamsByIcao: Map<string, string>;
 }
 
-export { getRelayBaseUrl, getRelayHeaders } from '../../../_shared/relay';
+import { getRelayBaseUrl, getRelayHeaders } from '../../../_shared/relay';
+export { getRelayBaseUrl, getRelayHeaders };
 
 export async function fetchNotamClosures(
   airports: MonitoredAirport[]
