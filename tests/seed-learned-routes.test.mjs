@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 
-import { isAllowedRouteHost, bulkReadLearnedRoutes, bulkWriteLearnedRoutes } from '../scripts/_seed-utils.mjs';
+import { isAllowedRouteHost, bulkReadLearnedRoutes, bulkWriteLearnedRoutes, processItemRoute } from '../scripts/_seed-utils.mjs';
 
 // ---------------------------------------------------------------------------
 // isAllowedRouteHost
@@ -221,5 +221,94 @@ describe('bulkWriteLearnedRoutes', () => {
       /bulkWriteLearnedRoutes HTTP 503/
     );
     restore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// processItemRoute — integration-level decision tree
+// ---------------------------------------------------------------------------
+
+describe('processItemRoute', () => {
+  const noop = async () => {};
+  const allowedHosts = ['carrefouruae.com'];
+  const baseRoute = { url: 'https://carrefouruae.com/sugar', lastSuccessAt: 1000, hits: 3, failsSinceSuccess: 0, currency: 'AED' };
+  const baseOpts = {
+    allowedHosts,
+    currency: 'AED',
+    itemId: 'sugar',
+    fxRate: 0.27,
+    itemUsdMax: 5,
+    tryDirectFetch: async () => null,
+    scrapeFirecrawl: async () => null,
+    fetchViaExa: async () => null,
+    sleep: noop,
+    firecrawlDelayMs: 0,
+  };
+
+  it('learned-hit success: fetchViaExa not called', async () => {
+    let exaCalled = false;
+    const result = await processItemRoute({
+      ...baseOpts,
+      learned: baseRoute,
+      tryDirectFetch: async () => 5.50,
+      fetchViaExa: async () => { exaCalled = true; return null; },
+    });
+    assert.equal(exaCalled, false);
+    assert.equal(result.localPrice, 5.50);
+    assert.equal(result.routeUpdate?.hits, 4);
+    assert.equal(result.routeUpdate?.failsSinceSuccess, 0);
+    assert.equal(result.routeDelete, false);
+  });
+
+  it('learned-hit fail + EXA success: routeUpdate has new URL, hits=1', async () => {
+    const result = await processItemRoute({
+      ...baseOpts,
+      learned: baseRoute,
+      tryDirectFetch: async () => null,
+      scrapeFirecrawl: async () => null,
+      fetchViaExa: async () => ({ localPrice: 6.00, sourceSite: 'https://carrefouruae.com/new-sugar' }),
+    });
+    assert.equal(result.localPrice, 6.00);
+    assert.equal(result.routeUpdate?.url, 'https://carrefouruae.com/new-sugar');
+    assert.equal(result.routeUpdate?.hits, 1);
+    assert.equal(result.routeDelete, false);
+  });
+
+  it('learned fail x2: routeDelete=true, routeUpdate=null, localPrice=null', async () => {
+    const staleRoute = { ...baseRoute, failsSinceSuccess: 1 };
+    const result = await processItemRoute({
+      ...baseOpts,
+      learned: staleRoute,
+      tryDirectFetch: async () => null,
+      scrapeFirecrawl: async () => null,
+      fetchViaExa: async () => null,
+    });
+    assert.equal(result.routeDelete, true);
+    assert.equal(result.routeUpdate, null);
+    assert.equal(result.localPrice, null);
+  });
+
+  it('corrupted URL (bad host): routeDelete=true, tryDirectFetch never called (SSRF guard)', async () => {
+    let directFetchCalled = false;
+    const badRoute = { ...baseRoute, url: 'https://evil.com/sugar' };
+    const result = await processItemRoute({
+      ...baseOpts,
+      learned: badRoute,
+      tryDirectFetch: async () => { directFetchCalled = true; return null; },
+      fetchViaExa: async () => null,  // EXA still runs to find a replacement
+    });
+    assert.equal(result.routeDelete, true);
+    assert.equal(directFetchCalled, false);
+  });
+
+  it('EXA success but host not in allowlist: price returned, route NOT saved', async () => {
+    const result = await processItemRoute({
+      ...baseOpts,
+      learned: undefined,
+      fetchViaExa: async () => ({ localPrice: 5.50, sourceSite: 'https://evil.com/sugar' }),
+    });
+    assert.equal(result.localPrice, 5.50);
+    assert.equal(result.routeUpdate, null);
+    assert.equal(result.routeDelete, false);
   });
 });

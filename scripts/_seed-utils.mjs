@@ -344,6 +344,78 @@ export async function bulkWriteLearnedRoutes(scope, updates, deletes = new Set()
   console.log(`  [routes] written: ${updates.size} updated, ${effectiveDeletes.length} deleted`);
 }
 
+// Decision tree for a single seed item: try learned route first, fall back to EXA.
+// All external I/O is injected so this function can be unit-tested without Redis or HTTP.
+//
+// Returns: { localPrice, sourceSite, routeUpdate, routeDelete }
+//   routeUpdate — route object to persist (null = nothing to write)
+//   routeDelete — true if the Redis key should be hard-deleted
+export async function processItemRoute({
+  learned,           // route object from Redis, or undefined/null on first run
+  allowedHosts,      // string[] — normalised (no www.), same as EXA includeDomains
+  currency,          // e.g. 'AED'
+  itemId,            // e.g. 'sugar' — used only for log messages
+  fxRate,            // number | null
+  itemUsdMax = null, // per-item bulk cap in USD (ITEM_USD_MAX[itemId])
+  tryDirectFetch,    // async (url, currency, itemId, fxRate) => number | null
+  scrapeFirecrawl,   // async (url, currency) => { price, source } | null
+  fetchViaExa,       // async () => { localPrice, sourceSite } | null  (caller owns EXA+FC logic)
+  sleep: sleepFn,    // async ms => void
+  firecrawlDelayMs = 0,
+}) {
+  let localPrice = null;
+  let sourceSite = '';
+  let routeUpdate = null;
+  let routeDelete = false;
+
+  if (learned) {
+    if (learned.failsSinceSuccess >= 2 || !isAllowedRouteHost(learned.url, allowedHosts)) {
+      routeDelete = true;
+      console.log(`    [learned✗] ${itemId}: evicting (${learned.failsSinceSuccess >= 2 ? '2 failures' : 'invalid host'})`);
+    } else {
+      localPrice = await tryDirectFetch(learned.url, currency, itemId, fxRate);
+      if (localPrice !== null) {
+        sourceSite = learned.url;
+        routeUpdate = { ...learned, hits: learned.hits + 1, failsSinceSuccess: 0, lastSuccessAt: Date.now() };
+        console.log(`    [learned✓] ${itemId}: ${localPrice} ${currency}`);
+      } else {
+        await sleepFn(firecrawlDelayMs);
+        const fc = await scrapeFirecrawl(learned.url, currency);
+        const fcSkip = fc && fxRate && itemUsdMax && (fc.price * fxRate) > itemUsdMax;
+        if (fc && !fcSkip) {
+          localPrice = fc.price;
+          sourceSite = fc.source;
+          routeUpdate = { ...learned, hits: learned.hits + 1, failsSinceSuccess: 0, lastSuccessAt: Date.now() };
+          console.log(`    [learned-FC✓] ${itemId}: ${localPrice} ${currency}`);
+        } else {
+          const newFails = learned.failsSinceSuccess + 1;
+          if (newFails >= 2) {
+            routeDelete = true;
+            console.log(`    [learned✗→EXA] ${itemId}: 2 failures — evicting, retrying via EXA`);
+          } else {
+            routeUpdate = { ...learned, failsSinceSuccess: newFails };
+            console.log(`    [learned✗→EXA] ${itemId}: failed (${newFails}/2), retrying via EXA`);
+          }
+        }
+      }
+    }
+  }
+
+  if (localPrice === null) {
+    const exaResult = await fetchViaExa();
+    if (exaResult?.localPrice != null) {
+      localPrice = exaResult.localPrice;
+      sourceSite = exaResult.sourceSite || '';
+      if (sourceSite && isAllowedRouteHost(sourceSite, allowedHosts)) {
+        routeUpdate = { url: sourceSite, lastSuccessAt: Date.now(), hits: 1, failsSinceSuccess: 0, currency };
+        console.log(`    [EXA->learned] ${itemId}: saved ${sourceSite.slice(0, 55)}`);
+      }
+    }
+  }
+
+  return { localPrice, sourceSite, routeUpdate, routeDelete };
+}
+
 /**
  * Read the current canonical snapshot from Redis before a seed run overwrites it.
  * Used by seed scripts that compute WoW deltas (bigmac, grocery-basket).
