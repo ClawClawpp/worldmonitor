@@ -47,6 +47,7 @@ import {
   BigMacPanel,
   WorldClockPanel,
   AirlineIntelPanel,
+  VcEcosystemPanel,
   AviationCommandBar,
   MilitaryCorrelationPanel,
   EscalationCorrelationPanel,
@@ -824,6 +825,7 @@ export class PanelLayoutManager implements AppModule {
       this.ctx.panels['windy-webcams'] = new PinnedWebcamsPanel();
     }
 
+    this.createPanel('vc-ecosystem', () => new VcEcosystemPanel());
     this.createPanel('events', () => new TechEventsPanel('events', () => this.ctx.allNews));
     this.createPanel('service-status', () => new ServiceStatusPanel());
 
