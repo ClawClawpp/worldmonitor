@@ -190,7 +190,7 @@ describe('getRelayHeaders — with auth', () => {
 
 describe('relay.ts — consumer import verification', () => {
   const consumers = [
-    { file: 'server/worldmonitor/aviation/v1/_shared.ts', importPath: '../../_shared/relay' },
+    { file: 'server/worldmonitor/aviation/v1/_shared.ts', importPath: '../../../_shared/relay' },
     { file: 'server/worldmonitor/intelligence/v1/_relay.ts', importPath: '../../../_shared/relay' },
     { file: 'server/worldmonitor/research/v1/list-tech-events.ts', importPath: '../../../_shared/relay' },
     { file: 'server/worldmonitor/maritime/v1/get-vessel-snapshot.ts', importPath: '../../../_shared/relay' },
