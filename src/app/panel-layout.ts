@@ -527,10 +527,7 @@ export class PanelLayoutManager implements AppModule {
 
     this.createPanel('heatmap', () => new HeatmapPanel());
     this.createPanel('markets', () => new MarketPanel());
-    const variantPanelKeys = new Set(VARIANT_DEFAULTS[SITE_VARIANT] ?? []);
-    const stockAnalysisPanel = variantPanelKeys.has('stock-analysis')
-      ? this.createPanel('stock-analysis', () => new StockAnalysisPanel())
-      : null;
+    const stockAnalysisPanel = this.createPanel('stock-analysis', () => new StockAnalysisPanel());
     if (stockAnalysisPanel && !getSecretState('WORLDMONITOR_API_KEY').present && !isProUser()) {
       stockAnalysisPanel.showLocked([
         'AI stock briefs with technical + news synthesis',
@@ -538,9 +535,7 @@ export class PanelLayoutManager implements AppModule {
         'Actionable watchlist monitoring for your premium workspace',
       ]);
     }
-    const stockBacktestPanel = variantPanelKeys.has('stock-backtest')
-      ? this.createPanel('stock-backtest', () => new StockBacktestPanel())
-      : null;
+    const stockBacktestPanel = this.createPanel('stock-backtest', () => new StockBacktestPanel());
     if (stockBacktestPanel && !getSecretState('WORLDMONITOR_API_KEY').present && !isProUser()) {
       stockBacktestPanel.showLocked([
         'Historical replay of premium stock-analysis signals',
@@ -740,13 +735,11 @@ export class PanelLayoutManager implements AppModule {
     const _wmKeyPresent = getSecretState('WORLDMONITOR_API_KEY').present;
     const _lockPanels = this.ctx.isDesktopApp && !_wmKeyPresent && !isProUser();
 
-    if (variantPanelKeys.has('daily-market-brief')) {
-      this.lazyPanel('daily-market-brief', () =>
-        import('@/components/DailyMarketBriefPanel').then(m => new m.DailyMarketBriefPanel()),
-        undefined,
-        (!_wmKeyPresent && !isProUser()) ? ['Pre-market watchlist priorities', 'Action plan for the session', 'Risk watch tied to current finance headlines'] : undefined,
-      );
-    }
+    this.lazyPanel('daily-market-brief', () =>
+      import('@/components/DailyMarketBriefPanel').then(m => new m.DailyMarketBriefPanel()),
+      undefined,
+      (!_wmKeyPresent && !isProUser()) ? ['Pre-market watchlist priorities', 'Action plan for the session', 'Risk watch tied to current finance headlines'] : undefined,
+    );
 
     this.lazyPanel('forecast', () =>
       import('@/components/ForecastPanel').then(m => new m.ForecastPanel()),
