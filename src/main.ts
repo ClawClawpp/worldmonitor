@@ -326,6 +326,7 @@ import { applyStoredTheme } from '@/utils/theme-manager';
 import { applyFont } from '@/services/font-settings';
 import { SITE_VARIANT } from '@/config/variant';
 import { clearChunkReloadGuard, installChunkReloadGuard } from '@/bootstrap/chunk-reload';
+import { installSwUpdateHandler } from '@/bootstrap/sw-update';
 
 // Auto-reload on stale chunk 404s after deployment (Vite fires this for modulepreload failures).
 const chunkReloadStorageKey = installChunkReloadGuard(__APP_VERSION__);
@@ -427,74 +428,7 @@ if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
 }
 
 if (!('__TAURI_INTERNALS__' in window) && !('__TAURI__' in window) && 'serviceWorker' in navigator) {
-  // Tracks the active onHidden handler so it can be removed when a newer update replaces the toast.
-  let currentSwOnHidden: (() => void) | null = null;
-
-  const showSwUpdateToast = (): void => {
-    // Clean up the previous toast's visibilitychange handler before replacing the DOM node.
-    if (currentSwOnHidden) {
-      document.removeEventListener('visibilitychange', currentSwOnHidden);
-      currentSwOnHidden = null;
-    }
-    document.querySelector('.update-toast')?.remove();
-
-    const toast = document.createElement('div');
-    toast.className = 'update-toast';
-    toast.innerHTML = `
-      <div class="update-toast-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"/>
-          <path d="M20.49 15a9 9 0 1 1-.49-4.9L23 10"/>
-        </svg>
-      </div>
-      <div class="update-toast-body">
-        <div class="update-toast-title">Update Available</div>
-        <div class="update-toast-detail">A new version is ready.</div>
-      </div>
-      <button class="update-toast-action" data-action="reload">Reload</button>
-      <button class="update-toast-dismiss" data-action="dismiss" aria-label="Dismiss">\u00d7</button>
-    `;
-
-    let dismissed = false;
-
-    const onHidden = (): void => {
-      if (!dismissed && document.visibilityState === 'hidden' && document.body.contains(toast)) {
-        window.location.reload();
-      }
-    };
-
-    toast.addEventListener('click', (e) => {
-      const action = (e.target as HTMLElement).closest<HTMLElement>('[data-action]')?.dataset.action;
-      if (action === 'reload') {
-        window.location.reload();
-      } else if (action === 'dismiss') {
-        dismissed = true;
-        document.removeEventListener('visibilitychange', onHidden);
-        currentSwOnHidden = null;
-        toast.classList.remove('visible');
-        setTimeout(() => toast.remove(), 300);
-      }
-    });
-
-    currentSwOnHidden = onHidden;
-    document.addEventListener('visibilitychange', onHidden);
-    document.body.appendChild(toast);
-    requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('visible')));
-  };
-
-  // Show an update toast when a NEW SW replaces an existing one (fixes stale HTML after deploys).
-  // Skip on first visit: skipWaiting+clientsClaim fires controllerchange when the SW
-  // claims the page for the first time — no prior version to update from.
-  // Each subsequent controllerchange (new deploy) re-shows the toast independently,
-  // so dismissing one update never suppresses future ones.
-  let hadController = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadController) {
-      hadController = true;
-      return;
-    }
-    showSwUpdateToast();
-  });
+  installSwUpdateHandler();
 
   const SW_UPDATE_SUCCESS_INTERVAL_MS = 60 * 60 * 1000;
   const SW_UPDATE_FAILURE_INTERVAL_MS = 5 * 60 * 1000;
