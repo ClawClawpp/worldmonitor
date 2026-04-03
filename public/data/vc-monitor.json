@@ -1,0 +1,151 @@
+{
+  "updatedAt": "2026-04-03T16:00:00.000Z",
+  "sourceLabel": "VC Monitor seed dataset",
+  "firms": [
+    {
+      "name": "Y Combinator",
+      "focus": "Founders, software, AI, infra, applied products",
+      "geography": "US / global",
+      "stage": "Pre-seed / seed",
+      "signal": "Fast read on what early builders are shipping and how founder narratives are changing.",
+      "priority": "High",
+      "tags": ["founders", "seed", "AI"],
+      "url": "https://www.ycombinator.com/"
+    },
+    {
+      "name": "a16z",
+      "focus": "AI, infrastructure, fintech, defense, healthcare, crypto",
+      "geography": "US / global",
+      "stage": "Seed to growth",
+      "signal": "A thesis machine — useful for understanding narrative formation and sector conviction.",
+      "priority": "High",
+      "tags": ["AI", "defense", "thesis"],
+      "url": "https://a16z.com/"
+    },
+    {
+      "name": "Founders Fund",
+      "focus": "Hard tech, defense, frontier science, contrarian bets",
+      "geography": "US",
+      "stage": "Early to growth",
+      "signal": "Watch when capital rotates from software convenience into strategic infrastructure.",
+      "priority": "High",
+      "tags": ["hard-tech", "defense", "contrarian"],
+      "url": "https://foundersfund.com/"
+    },
+    {
+      "name": "Lightspeed",
+      "focus": "Enterprise, consumer, AI, infrastructure, India/SEA",
+      "geography": "US / India / Europe / SEA",
+      "stage": "Seed to growth",
+      "signal": "Helpful for seeing cross-region startup momentum and AI infrastructure appetite.",
+      "priority": "Medium",
+      "tags": ["global", "AI", "enterprise"],
+      "url": "https://lsvp.com/"
+    }
+  ],
+  "startupRadar": [
+    {
+      "name": "AI infra toolchains",
+      "category": "Infrastructure",
+      "whyItMatters": "The picks-and-shovels layer still captures a large share of AI spend before application margins settle.",
+      "signal": "GPU orchestration, eval tooling, agent backends, retrieval quality, workflow reliability.",
+      "urgency": "Now",
+      "tags": ["AI", "infrastructure", "compute"]
+    },
+    {
+      "name": "Vertical AI copilots",
+      "category": "Applied AI",
+      "whyItMatters": "The real defensibility is moving from generic chat to domain-specific workflow replacement.",
+      "signal": "Healthcare, legal, sales ops, accounting, field service, compliance.",
+      "urgency": "Now",
+      "tags": ["AI", "vertical", "workflow"]
+    },
+    {
+      "name": "Defense / resilience startups",
+      "category": "Strategic tech",
+      "whyItMatters": "Capital is flowing toward sovereign capability, industrial resilience, drones, security, and supply chain visibility.",
+      "signal": "Dual-use, logistics, satellite, sensor, autonomy, critical manufacturing.",
+      "urgency": "Watch",
+      "tags": ["defense", "resilience", "supply-chain"]
+    }
+  ],
+  "thesisTracks": [
+    {
+      "theme": "AI is unbundling software seats into autonomous workflows.",
+      "angle": "Watch products that replace steps in a process, not just add a chatbot on top."
+    },
+    {
+      "theme": "Strategic sectors are converging with venture.",
+      "angle": "Defense, energy, semis, robotics, and supply chain are no longer slow sectors from a capital perspective."
+    }
+  ],
+  "researchSources": [
+    {
+      "name": "Crunchbase",
+      "kind": "data",
+      "why": "Baseline company, funding, and investor discovery.",
+      "url": "https://www.crunchbase.com/"
+    },
+    {
+      "name": "StrictlyVC",
+      "kind": "media",
+      "why": "Good for who is active, who is speaking, and where private-market attention is clustering.",
+      "url": "https://strictlyvc.com/"
+    },
+    {
+      "name": "OpenVC",
+      "kind": "data",
+      "why": "Useful structured view of firms, stages, and filters for outreach.",
+      "url": "https://www.openvc.app/"
+    }
+  ],
+  "signalLenses": [
+    {
+      "label": "Deal flow",
+      "whatToWatch": "fundraises, new funds, exits, M&A, partner moves",
+      "whyItMatters": "This tells you where capital is actually moving, not just what people claim to believe."
+    },
+    {
+      "label": "Product momentum",
+      "whatToWatch": "launches, GitHub velocity, Product Hunt, user buzz, infra adoption",
+      "whyItMatters": "Early product traction often surfaces before the formal financing narrative catches up."
+    }
+  ],
+  "workflowSteps": [
+    {
+      "step": "Scan",
+      "objective": "Review top signals across firms, sectors, and startups instead of drowning in isolated headlines."
+    },
+    {
+      "step": "Cluster",
+      "objective": "Group repeated signals into themes: AI infra, defense tech, enterprise AI, robotics, climate, fintech."
+    },
+    {
+      "step": "Score",
+      "objective": "Rank items by strategic relevance, timing, and whether they alter your thesis or outreach plan."
+    },
+    {
+      "step": "Act",
+      "objective": "Turn signal into action: update watchlists, draft outreach, note a thesis shift, or ignore noise."
+    }
+  ],
+  "watchBuckets": [
+    {
+      "title": "Track weekly",
+      "items": [
+        "Top VC firms and partner essays",
+        "AI infra and developer-tools startups",
+        "macro/geopolitics that change capital appetite"
+      ]
+    },
+    {
+      "title": "Trigger alerts",
+      "items": [
+        "large fundraises",
+        "major partner moves",
+        "portfolio exits",
+        "regulatory shifts affecting AI or defense"
+      ]
+    }
+  ]
+}
