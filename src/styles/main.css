@@ -20861,6 +20861,13 @@ body.has-breaking-alert .panels-grid {
   gap: 14px;
 }
 
+.vc-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.vc-summary-card,
 .vc-section {
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 12px;
@@ -20868,12 +20875,29 @@ body.has-breaking-alert .panels-grid {
   background: rgba(15, 23, 42, 0.24);
 }
 
+.vc-summary-label,
 .vc-section-title {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #93c5fd;
+}
+
+.vc-summary-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 6px 0 4px;
+}
+
+.vc-summary-note {
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.vc-section-title {
   margin-bottom: 10px;
 }
 
@@ -20883,8 +20907,15 @@ body.has-breaking-alert .panels-grid {
   gap: 10px;
 }
 
+.vc-grid-tight {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
 .vc-card,
-.vc-radar-item {
+.vc-radar-item,
+.vc-lens-card,
+.vc-flow-step,
+.vc-bucket {
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 10px;
   background: rgba(2, 6, 23, 0.34);
@@ -20895,12 +20926,22 @@ body.has-breaking-alert .panels-grid {
 .vc-radar-top {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   margin-bottom: 6px;
 }
 
-.vc-name {
+.vc-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vc-name,
+.vc-lens-title,
+.vc-bucket-title,
+.vc-flow-label,
+.vc-radar-name {
   font-weight: 700;
   color: #e2e8f0;
 }
@@ -20918,6 +20959,9 @@ body.has-breaking-alert .panels-grid {
 .vc-radar-text,
 .vc-radar-signal,
 .vc-thesis-angle,
+.vc-lens-watch,
+.vc-lens-why,
+.vc-flow-text,
 .vc-list li {
   color: #cbd5e1;
   font-size: 12px;
@@ -20925,32 +20969,77 @@ body.has-breaking-alert .panels-grid {
 }
 
 .vc-focus,
-.vc-radar-text {
+.vc-radar-text,
+.vc-lens-watch {
   margin-bottom: 6px;
 }
 
 .vc-signal,
 .vc-radar-signal span,
-.vc-source-kind {
+.vc-source-kind,
+.vc-lens-watch span {
   color: #93c5fd;
 }
 
-.vc-pill {
+.vc-pill,
+.vc-priority,
+.vc-urgency,
+.vc-mini-tag {
   display: inline-flex;
   align-items: center;
   padding: 2px 6px;
   border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.vc-pill {
   background: rgba(59, 130, 246, 0.18);
   color: #bfdbfe;
-  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+}
+
+.vc-priority.high,
+.vc-urgency.now {
+  background: rgba(248, 113, 113, 0.15);
+  color: #fecaca;
+}
+
+.vc-priority.medium,
+.vc-urgency.watch {
+  background: rgba(250, 204, 21, 0.14);
+  color: #fde68a;
+}
+
+.vc-urgency.build-thesis {
+  background: rgba(96, 165, 250, 0.14);
+  color: #bfdbfe;
+}
+
+.vc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.vc-mini-tag {
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
 }
 
 .vc-two-col {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 12px;
+}
+
+.vc-flow-grid,
+.vc-buckets,
+.vc-radar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .vc-list {
